@@ -16,6 +16,7 @@
 package org.msgpack.core.buffer;
 
 import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -77,6 +78,15 @@ public class MessageBuffer
             catch (Exception e) {
             }
 
+            boolean directBufferUsable = false;
+            try {
+                // Java 17 does not export this method
+                ((DirectBuffer) ByteBuffer.allocateDirect(1)).address();
+                directBufferUsable = true;
+            }
+            catch (Throwable e) {
+            }
+
             // Detect android VM
             boolean isAndroid = System.getProperty("java.runtime.name", "").toLowerCase().contains("android");
 
@@ -89,7 +99,8 @@ public class MessageBuffer
                             || isAndroid
                             || isGAE
                             || javaVersion < 7
-                            || !hasUnsafe;
+                            || !hasUnsafe
+                            || !directBufferUsable;
 
             if (!useUniversalBuffer) {
                 // Fetch theUnsafe object for Oracle and OpenJDK
